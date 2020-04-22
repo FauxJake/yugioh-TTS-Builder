@@ -54,9 +54,10 @@ class CardNotFoundError(Error):
 
 class TTSDeckbuilder():
     '''All the main deckbuilding logic goes here'''
-    def __init__(self, filename, logger):
+    def __init__(self, filename, logger, imgurClientId):
         self._logger = logger
         self._filename = filename
+        self._imgurClientId = imgurClientId
 
     class Card():
         '''represents and stores information about a single card'''
@@ -93,6 +94,7 @@ class TTSDeckbuilder():
         expandedDecklist = self.expandDecklistFromFile(args.filename, logging)
         deckWithData = self.getDeckData(expandedDecklist)
         image = self.createDeckImage(deckWithData)
+        self.uploadImageToImgur(image)
 
     
     def expandDecklistFromFile(self, filename, logging):
@@ -160,9 +162,12 @@ class TTSDeckbuilder():
 
         return result
 
+    def uploadImageToImgur(self, image):
+        pass
+
 def main(args, logLevel):
     logging.basicConfig(format="%(levelname)s: %(message)s", level=logLevel)
-    builder = TTSDeckbuilder(args.filename, logging)
+    builder = TTSDeckbuilder(args.filename, logging, args.imgurClientId)
     builder.build()
 
 if __name__ == '__main__':
@@ -174,6 +179,9 @@ if __name__ == '__main__':
                         help="The relative path to the text file containing the desired decklist. Each line in the " +
                             "file must be in the form of: 'N Cardname', where 'N' is the number of copies " +
                             "of the card to include")
+    
+    parser.add_argument('imgurClientId',
+                        help="In order to upload images to imgur's API, you need to register your app here: https://api.imgur.com/oauth2/addclient, and feed me your clientID (or ask Jake nicely for his)")
 
     parser.add_argument(
                       "-v",
