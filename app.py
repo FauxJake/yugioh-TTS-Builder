@@ -132,7 +132,7 @@ class TTSDeckbuilder():
         return results
 
     def createDeckImage(self, deckWithMetaData):
-        '''creates a 7 column image to upload to imgur or store locally based on the cards in the deck'''
+        '''creates an image to upload to imgur or store locally based on the cards in the deck'''
         self._logger.info("Generating deck image, this may take a hot sec...")
         
         images = []
@@ -143,10 +143,6 @@ class TTSDeckbuilder():
             images.append(r.raw) # store the bytes
 
         images = [Image.open(x) for x in images]
-
-        # hhokay. so. we want to make this image from tiled 421 x 614 images. Max 7 columns 
-        iColumn = 0
-        iRow = 0
 
         widths, heights = zip(*(i.size for i in images))
 
