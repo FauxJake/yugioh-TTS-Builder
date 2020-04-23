@@ -5,6 +5,7 @@
 # 4. create a bitmap based on decklist
 # 5. upload bitmap
 # 6. create TTS json file in %USER%/Documents/my games/Table Top Simulator/Saves/Saved Objects
+# 7. Package as setup-tools .exe
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -58,6 +59,58 @@ class TTSDeckbuilder():
         self._logger = logger
         self._filename = filename
         self._imgurClientId = imgurClientId
+        self._imgurUploadUrl = "https://api.imgur.com/3/upload"
+
+    # region TTS serialization objects 
+    # This is a bit anti-python, but meh, old habits die hard and it'll make the serialzation easier.
+    class ObjectStateTransform():
+        '''TTS ObjectStateTransform class for serialzation'''
+        def __init__(self):
+            self.posX = 0
+            self.posY = 0
+            self.posZ = 0
+            self.rotY = 180
+            self.rotZ = 180
+            self.scaleX = 1
+            self.scaleY = 1
+            self.scaleZ = 1
+
+    class ContainedObjectTransform(ObjectStateTransform):
+        '''TTS ContainedObjectTransform class for serialization'''
+        def print(self):
+            pass
+
+    class ContainedObject():
+        '''TTS ContainedObject class for serialization'''
+        def __init__(self):
+            self.Name = ""
+            self.NickName = ""
+            self.ContainedObjectTransform = TTSDeckbuilder.ContainedObjectTransform()
+            self.CardID = -1
+
+    class DeckInfo():
+        '''TTS DeckInfo class for serialization'''
+        def __init__(self):
+            self.NumWidth = 0
+            self.NumHeight = 0
+            self.FaceURL = ""
+            self.BackURL = "https://i.imgur.com/ubLQ2p2.jpg"
+
+    class CustomDeck():
+        '''TTS CustomDeck class for serialization'''
+        def __init__(self):
+            self.one = TTSDeckbuilder.DeckInfo() # how many decks pop out. TODO - add extra and side deck parsing
+
+    class ObjectState():
+        '''TTS ObjectState class for serialization'''
+        def __init__(self):
+            self.Transform = TTSDeckbuilder.ObjectStateTransform()
+            self.Name = ""
+            self.ContainedObjects = []
+            self.DeckIDs = []
+            self.CustomDeck = TTSDeckbuilder.CustomDeck()
+
+    # endregion
 
     class Card():
         '''represents and stores information about a single card'''
@@ -95,6 +148,7 @@ class TTSDeckbuilder():
         deckWithData = self.getDeckData(expandedDecklist)
         image = self.createDeckImage(deckWithData)
         self.uploadImageToImgur(image)
+        self.createTTSFile(deckWithData)
 
     
     def expandDecklistFromFile(self, filename, logging):
@@ -163,6 +217,14 @@ class TTSDeckbuilder():
         return result
 
     def uploadImageToImgur(self, image):
+        '''utilizes the imgur API to upload the image so it's publically available'''
+        self._logger.info("Uploading image to imgur...")
+        headers = {"Authorization" : "Client " + self._imgurClientId}
+        data = {"image" : image}
+        r = requests.post(self._imgurUploadUrl, data, headers=headers)
+        r.raise_for_status()
+
+    def createTTSFile(self, deck):
         pass
 
 def main(args, logLevel):
