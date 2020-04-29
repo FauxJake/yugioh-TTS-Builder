@@ -185,14 +185,6 @@ class TTSDeckbuilder:
 
         return result
 
-    # def uploadImageToImgur(self, image):
-    #     '''utilizes the imgur API to upload the image so it's publically available'''
-    #     self._logger.info("Uploading image to imgur...")
-    #     headers = {"Authorization" : "Client " + self._imgurClientId}
-    #     data = {"image" : image}
-    #     r = requests.post(self._imgurUploadUrl, data, headers=headers)
-    #     r.raise_for_status()
-
     def createTTSFile(self, deck):
         """generates a json file and saves it to disk for importing into TTS
         ObjectStates
@@ -235,7 +227,7 @@ class TTSDeckbuilder:
                     "CardID": card._deckID,
                     "Name": "Card",
                     "Nickname": card._cardName,
-                    "Transform": Transform
+                    "Transform": Transform,
                 }
             )
 
@@ -268,7 +260,7 @@ class TTSDeckbuilder:
         )
         TTS["ObjectStates"] = ObjectStates
         self._logger.debug(json.dumps(TTS))
-        with open('deck.json', 'w') as outFile:
+        with open("deck.json", "w") as outFile:
             json.dump(TTS, outFile)
 
 
@@ -290,9 +282,6 @@ if __name__ == "__main__":
         + "file must be in the form of: 'N Cardname', where 'N' is the number of copies "
         + "of the card to include",
     )
-
-    # parser.add_argument('imgurClientId',
-    #                     help="In order to upload images to imgur's API, you need to register your app here: https://api.imgur.com/oauth2/addclient, and feed me your clientID (or ask Jake nicely for his)")
 
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"
