@@ -4,3 +4,4 @@ testData/**
 __pycache__/**
 app.spec
 build/**
+*.log

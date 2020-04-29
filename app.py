@@ -6,6 +6,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse, logging, sys, os, io, json, requests
+import PySimpleGUI as sgui
 from ftfy import fix_text
 from PIL import Image
 
@@ -56,9 +57,9 @@ class CardNotFoundError(Error):
 class TTSDeckbuilder:
     """All the main deckbuilding logic goes here"""
 
-    def __init__(self, filename, logger):
+    def __init__(self, fileName, logger):
         self._logger = logger
-        self._filename = filename
+        self._fileName = fileName
         # self._imgurClientId = imgurClientId
         self._imgurUploadUrl = "https://api.imgur.com/3/upload"
 
@@ -99,7 +100,7 @@ class TTSDeckbuilder:
             )
 
     def build(self):
-        expandedDecklist = self.expandDecklistFromFile(args.filename, logging)
+        expandedDecklist = self.expandDecklistFromFile(self._fileName, logging)
         deckWithData = self.getDeckData(expandedDecklist)
         self.assignDeckIDs(deckWithData)
         # image = self.createDeckImage(deckWithData)
@@ -264,35 +265,31 @@ class TTSDeckbuilder:
             json.dump(TTS, outFile)
 
 
-def main(args, logLevel):
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=logLevel)
-    builder = TTSDeckbuilder(args.filename, logging)
+def main(fileName, deckName, logLevel):
+    logging.basicConfig(filename="application.log", filemode="w", format="%(levelname)s: %(message)s", level=logLevel)
+    builder = TTSDeckbuilder(fileName, logging)
     builder.build()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="A console tool for generating a Tabletop Simulator (TTS) Deck from a text file"
-    )
+    sgui.theme("Dark")
+    layout = [
+        [sgui.Text("Select a decklist to convert: ")],
+        [sgui.Input(key="FILE"), sgui.FilesBrowse()],
+        [sgui.Text("Name the Deck: ")],
+        [sgui.Input(key="NAME")],
+        [sgui.Checkbox("Debug Mode", key="DEBUG")],
+        [sgui.Submit()],
+    ]
 
-    # Positional Arguments
-    parser.add_argument(
-        "filename",
-        help="The relative path to the text file containing the desired decklist. Each line in the "
-        + "file must be in the form of: 'N Cardname', where 'N' is the number of copies "
-        + "of the card to include",
-    )
-
-    parser.add_argument(
-        "-v", "--verbose", help="increase output verbosity", action="store_true"
-    )
-    args = parser.parse_args()
+    window = sgui.Window("TTS Yu-Gi-Oh Deckbuilder", layout)
+    events, values = window.read()
 
     # Setup logging
-    if args.verbose:
+    if values["DEBUG"]:
         logLevel = logging.DEBUG
     else:
         logLevel = logging.INFO
 
-    args = parser.parse_args()
-    main(args, logLevel)
+    # args = parser.parse_args()
+    main(values["FILE"], values["NAME"], logLevel)
