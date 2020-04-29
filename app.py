@@ -1,11 +1,6 @@
 # todo steps
-# 1. get list of cardnames from txt file DONE
-# 2. get card info from ygopro api https://db.ygoprodeck.com/api/v7/cardinfo.php?name= DONE
-# 3. parse info needed and add to decklist in memory DONE
-# 4. create a bitmap based on decklist
-# 5. upload bitmap
-# 6. create TTS json file in %USER%/Documents/my games/Table Top Simulator/Saves/Saved Objects
 # 7. Package as setup-tools .exe
+# 8. QoL stuff like deck name, etc.
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
