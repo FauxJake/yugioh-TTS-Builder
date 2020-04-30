@@ -7,7 +7,7 @@
 
 import argparse, logging, sys, os, io, json, requests
 import PySimpleGUI as sgui
-from ftfy import fix_text
+# from ftfy import fix_text
 from PIL import Image
 
 __author__ = "Jake Riesser"
@@ -57,9 +57,10 @@ class CardNotFoundError(Error):
 class TTSDeckbuilder:
     """All the main deckbuilding logic goes here"""
 
-    def __init__(self, fileName, logger):
+    def __init__(self, fileName, deckName, logger):
         self._logger = logger
         self._fileName = fileName
+        self._deckName = deckName
         # self._imgurClientId = imgurClientId
         self._imgurUploadUrl = "https://api.imgur.com/3/upload"
 
@@ -79,7 +80,7 @@ class TTSDeckbuilder:
         def populateDataFromYGoPro(self):
             """Gets metadata from YGoPro.org for a given cardname"""
 
-            r = requests.get(fix_text(self._metaDataUrl + self._cardName.strip()))
+            r = requests.get(self._metaDataUrl + self._cardName.strip())
             r.raise_for_status()
             responseJson = r.json()
             if "error" in responseJson and responseJson["error"]:
@@ -115,7 +116,7 @@ class TTSDeckbuilder:
         with open(filename) as file:
             lines = list(file)
             for line in lines:
-                line = fix_text(line.strip().rstrip("\n"))
+                line = line.strip().rstrip("\n")
                 if line:
                     # need to expand multiples, format should be as "2 Dark Magician"
                     numCopies = line[0].strip()
@@ -123,7 +124,7 @@ class TTSDeckbuilder:
                     if cardName and numCopies:
                         j = int(numCopies)
                         while j > 0:
-                            results.append(fix_text(cardName))
+                            results.append(cardName)
                             self._logger.debug("Added card {0}".format(cardName))
                             j -= 1
                     else:
@@ -261,13 +262,13 @@ class TTSDeckbuilder:
         )
         TTS["ObjectStates"] = ObjectStates
         self._logger.debug(json.dumps(TTS))
-        with open("deck.json", "w") as outFile:
+        with open(self._deckName + ".json", "w") as outFile:
             json.dump(TTS, outFile)
 
 
 def main(fileName, deckName, logLevel):
     logging.basicConfig(filename="application.log", filemode="w", format="%(levelname)s: %(message)s", level=logLevel)
-    builder = TTSDeckbuilder(fileName, logging)
+    builder = TTSDeckbuilder(fileName, deckName, logging)
     builder.build()
 
 
@@ -293,3 +294,4 @@ if __name__ == "__main__":
 
     # args = parser.parse_args()
     main(values["FILE"], values["NAME"], logLevel)
+    sgui.popup_ok("Drag the {0}.json file into My Documents/my games/TableTop Simulator/Saves/Saved Objects and you should be gtg.".format(values["NAME"]), title="Deck Created")
