@@ -2,6 +2,6 @@ testData/**
 *.jpg
 *.json
 __pycache__/**
-app.spec
 build/**
 *.log
+*.spec
