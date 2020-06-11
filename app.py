@@ -61,8 +61,6 @@ class TTSDeckbuilder:
         self._logger = logger
         self._fileName = fileName
         self._deckName = deckName
-        # self._imgurClientId = imgurClientId
-        self._imgurUploadUrl = "https://api.imgur.com/3/upload"
 
     class Card:
         """represents and stores information about a single card"""
@@ -104,8 +102,6 @@ class TTSDeckbuilder:
         expandedDecklist = self.expandDecklistFromFile(self._fileName, logging)
         deckWithData = self.getDeckData(expandedDecklist)
         self.assignDeckIDs(deckWithData)
-        # image = self.createDeckImage(deckWithData)
-        # self.uploadImageToImgur(image)
         self.createTTSFile(deckWithData)
 
     def expandDecklistFromFile(self, filename, logging):
@@ -157,35 +153,6 @@ class TTSDeckbuilder:
                     if c._ygoproId == Id:
                         c._deckID = ctr
                 ctr += 100
-
-    def createDeckImage(self, deckWithMetaData):
-        """creates an image to upload to imgur or store locally based on the cards in the deck"""
-        self._logger.info("Generating deck image, this may take a hot sec...")
-
-        images = []
-        for card in deckWithMetaData:
-            r = requests.get(card._imageURL, stream=True)
-            r.raise_for_status()
-            r.raw.decode_content = True
-            images.append(r.raw)  # store the bytes
-
-        images = [Image.open(x) for x in images]
-
-        widths, heights = zip(*(i.size for i in images))
-
-        totalWidth = sum(widths)
-        maxHeight = max(heights)
-
-        result = Image.new("RGB", (totalWidth, maxHeight))
-
-        x_offset = 0
-        for im in images:
-            result.paste(im, (x_offset, 0))
-            x_offset += im.size[0]
-
-        result.save("test.jpg")
-
-        return result
 
     def createTTSFile(self, deck):
         """generates a json file and saves it to disk for importing into TTS
