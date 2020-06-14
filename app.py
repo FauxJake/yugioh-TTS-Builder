@@ -5,7 +5,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse, logging, sys, os, io, json, requests
+import argparse, logging, sys, os, io, json, requests, urllib
 import PySimpleGUI as sgui
 # from ftfy import fix_text
 from PIL import Image
@@ -65,10 +65,10 @@ class TTSDeckbuilder:
     class Card:
         """represents and stores information about a single card"""
 
-        def __init__(self, cardName):
+        def __init__(self, cardName, ygoproId):
             self._cardName = cardName
-            self._metaDataUrl = "https://db.ygoprodeck.com/api/v7/cardinfo.php?name="
-            self._ygoproId = -1
+            self._metaDataUrl = "https://db.ygoprodeck.com/api/v7/cardinfo.php?"
+            self._ygoproId = ygoproId
             self._deckID = -1
             self._desc = ""
             self._imageURL = ""
@@ -77,8 +77,16 @@ class TTSDeckbuilder:
 
         def populateDataFromYGoPro(self):
             """Gets metadata from YGoPro.org for a given cardname"""
-
-            r = requests.get(self._metaDataUrl + self._cardName.strip())
+            r = {}
+            if self._ygoproId != -1:
+                r = requests.get(self._metaDataUrl + "id=" + urllib.parse.quote(self._ygoproId.strip(), safe=""))
+            elif self._cardName != "":
+                r = requests.get(self._metaDataUrl + "name=" + urllib.parse.quote(self._cardName.strip(), safe=""))
+            else:
+                raise FormattingError(
+                message="need to specify a card name or ygoproid for card {0}".format(self.print())
+            )
+            
             r.raise_for_status()
             responseJson = r.json()
             if "error" in responseJson and responseJson["error"]:
@@ -99,17 +107,43 @@ class TTSDeckbuilder:
             )
 
     def build(self):
-        expandedDecklist = self.expandDecklistFromFile(self._fileName, logging)
-        deckWithData = self.getDeckData(expandedDecklist)
+        deckWithData = []
+        if (self._fileName.lower().endswith(".txt")):
+            self._logger.info("Formatting decklist from txt file")
+            deckWithData = self.getDeckData(self.expandDecklistFromTxtFile())
+        elif (self._fileName.lower().endswith(".ydk")):
+            self._logger.info("Decklist from ydk file")
+            deckWithData = self.decklistFromYdkFile()
+        else:
+            raise FormattingError(
+                message="File not supported: {0}".format(self._fileName)
+        )
+        
         self.assignDeckIDs(deckWithData)
         self.createTTSFile(deckWithData)
 
-    def expandDecklistFromFile(self, filename, logging):
-        """attempts to parse and return a list of expanded cardnames from the specified txt file"""
+    def decklistFromYdkFile(self):
+        self._logger.info("setting decklist from ydk file")
+
+        results = []
+        with open(self._fileName) as file:
+            lines = list(file)
+            for line in lines:
+                if line.startswith("#") or line.startswith("!"):
+                    continue #ToDo sidedecks
+                line = line.strip().rstrip("\n")
+                if line:
+                    card = self.Card("", line)
+                    results.append(card)
+                    self._logger.debug("Added card with metadata:{0}".format(card.print()))
+        return results
+
+    def expandDecklistFromTxtFile(self):
+        """attempts to parse and return a list of expanded cardnames from the specified file"""
         self._logger.info("Expanding decklist from text file {0}...".format(filename))
 
         results = []
-        with open(filename) as file:
+        with open(self._fileName) as file:
             lines = list(file)
             for line in lines:
                 line = line.strip().rstrip("\n")
@@ -136,7 +170,7 @@ class TTSDeckbuilder:
 
         results = []
         for cardName in expandedDecklist:
-            card = self.Card(cardName)
+            card = self.Card(cardName, -1)
             results.append(card)
             self._logger.debug("Added card with metadata: {0}".format(card.print()))
 
